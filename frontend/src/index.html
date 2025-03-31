@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Time</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>World Time</h1>
+        <select id="timezone-select" class="timezone-select">
+            <option value="">Select Timezone</option>
+            <!-- Timezones will be populated by JS -->
+        </select>
+        
+        <div class="clock-container">
+            <div class="time-card">
+                <div id="digital-clock" class="digital-clock">00:00:00</div>
+                <div id="date-display" class="date-display"></div>
+            </div>
+            <div class="analogue-container">
+                <div id="analogue-clock" class="analogue-clock">
+                    <div class="hand hour"></div>
+                    <div class="hand minute"></div>
+                    <div class="hand second"></div>
+                    <div class="center"></div>
+                    <div class="numbers">
+                        <span class="number n12">12</span>
+                        <span class="number n3">3</span>
+                        <span class="number n6">6</span>
+                        <span class="number n9">9</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="clock.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

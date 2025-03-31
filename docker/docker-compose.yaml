@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: world-time-backend:latest
+    container_name: world-time-backend
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        - BACKEND_URL=http://localhost:5000
+    image: world-time-frontend:latest
+    container_name: world-time-frontend
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+networks:
+  app-network:
+    driver: bridge
+    name: app-network

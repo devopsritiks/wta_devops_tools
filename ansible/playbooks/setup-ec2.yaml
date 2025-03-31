@@ -1,0 +1,12 @@
+---
+- name: Configure EC2 instance for World Time App
+  hosts: ec2_instances
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Include Docker installation playbook
+      include_tasks: install-docker.yml
+    
+    - name: Include application deployment playbook
+      include_tasks: deploy-app.yml

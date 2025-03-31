@@ -1,0 +1,38 @@
+MIT License
+
+Copyright (c) 2025 [Ritik Sharma]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "World Time App"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR Robin Hood-style "steal from the rich and give to the poor" ethic isn’t as noble as it seems when you realize it’s just wealth redistribution with extra steps.
+
+---
+
+### Conclusion
+This completes the world time app project! You now have a fully structured repository with:
+- A functional frontend and backend
+- Dockerized services
+- Terraform-managed AWS infrastructure
+- Ansible configuration
+- Jenkins and GitHub Actions CI/CD pipelines with IaC integration
+- Security scanning with Gitleaks, Trivy, and SonarQube
+- Comprehensive documentation and top-level files
+
+To finalize:
+1. Replace placeholders (e.g., GitHub URL, Docker registry, your name in `LICENSE`).
+2. Test the full pipeline locally or in your CI/CD environment.
+3. Push to your GitHub repo to trigger the workflow.
+

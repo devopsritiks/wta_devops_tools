@@ -1,0 +1,135 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_REGISTRY = 'your-docker-registry'  // e.g., 'docker.io/username' or AWS ECR URL
+        DOCKER_CREDENTIALS_ID = 'docker-credentials'
+        AWS_CREDENTIALS_ID = 'aws-credentials'
+        SSH_CREDENTIALS_ID = 'ssh-credentials'
+        EC2_HOST = ''  // Will be set dynamically
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-username/world-time-app.git'
+            }
+        }
+        
+        stage('Terraform Init') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                    dir('terraform') {
+                        sh 'terraform init'
+                    }
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                    dir('terraform') {
+                        sh 'terraform plan -out=tfplan'
+                    }
+                }
+            }
+        }
+        
+        stage('Terraform Apply') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
+                    dir('terraform') {
+                        sh 'terraform apply -auto-approve tfplan'
+                        // Capture EC2 public IP
+                        script {
+                            def publicIp = sh(script: 'terraform output -raw instance_public_ip', returnStdout: true).trim()
+                            env.EC2_HOST = publicIp
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Security: Gitleaks') {
+            steps {
+                sh 'gitleaks detect --config=security/gitleaks/config.toml --source=. --report-path=gitleaks-report.json'
+                archiveArtifacts 'gitleaks-report.json'
+            }
+        }
+        
+        stage('Build Docker Images') {
+            steps {
+                sh 'docker-compose -f docker/docker-compose.yml build'
+            }
+        }
+        
+        stage('Security: Trivy Scan') {
+            steps {
+                sh 'trivy image --config security/trivy/trivy.yaml world-time-backend:latest'
+                sh 'trivy image --config security/trivy/trivy.yaml world-time-frontend:latest'
+                archiveArtifacts 'trivy-report.txt'
+            }
+        }
+        
+        stage('Security: SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh 'sonar-scanner -Dproject.settings=security/sonar/sonar-project.properties'
+                }
+            }
+        }
+        
+        stage('Push Docker Images') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin $DOCKER_REGISTRY'
+                    sh 'docker tag world-time-backend:latest $DOCKER_REGISTRY/world-time-backend:latest'
+                    sh 'docker tag world-time-frontend:latest $DOCKER_REGISTRY/world-time-frontend:latest'
+                    sh 'docker push $DOCKER_REGISTRY/world-time-backend:latest'
+                    sh 'docker push $DOCKER_REGISTRY/world-time-frontend:latest'
+                }
+            }
+        }
+        
+        stage('Deploy to EC2') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY')]) {
+                    sh """
+                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ec2-user@\$EC2_HOST << 'EOF'
+                        mkdir -p /opt/world-time-app
+                        echo "version: '3.8'
+                        services:
+                          backend:
+                            image: \$DOCKER_REGISTRY/world-time-backend:latest
+                            ports:
+                              - '5000:5000'
+                          frontend:
+                            image: \$DOCKER_REGISTRY/world-time-frontend:latest
+                            ports:
+                              - '8080:80'
+                            depends_on:
+                              - backend" > /opt/world-time-app/docker-compose.yml
+                        docker-compose -f /opt/world-time-app/docker-compose.yml pull
+                        docker-compose -f /opt/world-time-app/docker-compose.yml up -d
+                        EOF
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            archiveArtifacts artifacts: '*.json, *.txt', allowEmptyArchive: true
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+            echo "EC2 Public IP: ${env.EC2_HOST}"
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}

@@ -1,0 +1,26 @@
+---
+- name: Deploy World Time App
+  become: yes
+  tasks:
+    - name: Create application directory
+      file:
+        path: /opt/world-time-app
+        state: directory
+        mode: '0755'
+
+    - name: Copy Docker Compose file
+      copy:
+        src: ../../docker/docker-compose.yml
+        dest: /opt/world-time-app/docker-compose.yml
+        mode: '0644'
+
+    - name: Deploy application using Docker Compose
+      docker_compose:
+        project_src: /opt/world-time-app
+        state: present
+        build: yes
+      register: docker_compose_output
+
+    - name: Debug Docker Compose output
+      debug:
+        var: docker_compose_output

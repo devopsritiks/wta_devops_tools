@@ -1,0 +1,17 @@
+---
+- name: Ensure Docker is installed
+  yum:
+    name: docker
+    state: present
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Ensure ec2-user can use Docker
+  user:
+    name: ec2-user
+    groups: docker
+    append: yes

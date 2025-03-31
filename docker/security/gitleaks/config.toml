@@ -1,0 +1,34 @@
+# Gitleaks configuration for world-time-app
+
+# Title for the report
+title = "World Time App Gitleaks Scan"
+
+# Extend the default rules
+[extend]
+use-default = true
+
+# Custom rules specific to the project
+[[rules]]
+description = "AWS Access Key"
+regex = '''(AKIA[0-9A-Z]{16})'''
+tags = ["aws", "key"]
+
+[[rules]]
+description = "Generic API Key"
+regex = '''(?i)api[-_]?key[^0-9A-Za-z]*(?:[0-9A-Za-z]{20,})'''
+tags = ["api", "key"]
+
+# Allowlist (ignore false positives)
+[allowlist]
+description = "Ignore example keys and test files"
+paths = [
+    '''tests/.*''',  # Ignore test files
+    '''docs/.*''',   # Ignore documentation
+]
+regexes = [
+    '''example[-_]?key''',  # Ignore example keys
+]
+
+# Whitelist specific commits or files if needed
+# [[whitelist]]
+# commits = ["commit-sha-to-ignore"]

@@ -1,0 +1,24 @@
+# Trivy configuration for world-time-app
+scan:
+  scanners:
+    - vuln  # Vulnerability scanning
+    - config  # Misconfiguration scanning (e.g., Dockerfile issues)
+  skip-dirs:
+    - tests/
+    - docs/
+
+severity:
+  - HIGH
+  - CRITICAL
+
+format: table  # Output format (can change to json for CI)
+output: trivy-report.txt  # Output file
+
+# Image-specific settings
+image:
+  ignore-unfixed: false  # Report all vulnerabilities, even if no fix exists
+  timeout: 5m  # Scan timeout
+
+# Cache settings for faster scans
+cache:
+  dir: /tmp/trivy-cache

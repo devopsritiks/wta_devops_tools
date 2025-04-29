@@ -95,25 +95,16 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY')]) {
+                    // Create a temporary Ansible inventory file with the dynamic EC2 IP
                     sh """
-                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ec2-user@\$EC2_HOST << 'EOF'
-                        mkdir -p /opt/world-time-app
-                        echo "version: '3.8'
-                        services:
-                          backend:
-                            image: \$DOCKER_REGISTRY/world-time-backend:latest
-                            ports:
-                              - '5000:5000'
-                          frontend:
-                            image: \$DOCKER_REGISTRY/world-time-frontend:latest
-                            ports:
-                              - '8080:80'
-                            depends_on:
-                              - backend" > /opt/world-time-app/docker-compose.yml
-                        docker-compose -f /opt/world-time-app/docker-compose.yml pull
-                        docker-compose -f /opt/world-time-app/docker-compose.yml up -d
-                        EOF
+                        echo '[ec2_instances]' > ansible/inventory/dynamic_ec2.yml
+                        echo "\${EC2_HOST} ansible_user=ec2-user ansible_ssh_private_key_file=/tmp/ssh_key" >> ansible/inventory/dynamic_ec2.yml
                     """
+                    // Copy SSH key to a temporary location
+                    sh 'cp $SSH_KEY /tmp/ssh_key'
+                    sh 'chmod 600 /tmp/ssh_key'
+                    // Run Ansible playbook
+                    sh 'ansible-playbook -i ansible/inventory/dynamic_ec2.yml ansible/playbooks/setup-ec2.yml --extra-vars "docker_registry=$DOCKER_REGISTRY"'
                 }
             }
         }
@@ -122,6 +113,7 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '*.json, *.txt', allowEmptyArchive: true
+            sh 'rm -f /tmp/ssh_key'  // Clean up temporary SSH key
             cleanWs()
         }
         success {

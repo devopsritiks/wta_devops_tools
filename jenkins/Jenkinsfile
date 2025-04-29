@@ -16,31 +16,15 @@ pipeline {
             }
         }
         
-        stage('Terraform Init') {
+        stage('Terraform Provisioning') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
                     dir('terraform') {
-                        sh 'terraform init'
-                    }
-                }
-            }
-        }
-        
-        stage('Terraform Plan') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
-                    dir('terraform') {
-                        sh 'terraform plan -out=tfplan'
-                    }
-                }
-            }
-        }
-        
-        stage('Terraform Apply') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CREDENTIALS_ID]]) {
-                    dir('terraform') {
-                        sh 'terraform apply -auto-approve tfplan'
+                        sh '''
+                            terraform init
+                            terraform plan -out=tfplan
+                            terraform apply -auto-approve tfplan
+                        '''
                         // Capture EC2 public IP
                         script {
                             def publicIp = sh(script: 'terraform output -raw instance_public_ip', returnStdout: true).trim()
